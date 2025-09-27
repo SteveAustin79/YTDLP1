@@ -78,9 +78,28 @@ def download_audio(url, output_path=BASE_PATH):
 
 def download_video(url, resolution=None, output_path=BASE_PATH):
     """
-    Download video and re-encode to H.264/AAC MP4 (VLC-compatible)
+    Download video and automatically merge/re-encode high-res (>1080p) webm
+    into MP4 H.264 + AAC for VLC.
     """
-    fmt = f"bestvideo[height={resolution}]+bestaudio/best" if resolution else "bestvideo+bestaudio/best"
+    info = get_info(url)
+    formats = info.get("formats", [])
+
+    # Determine if selected resolution is >1080p
+    if resolution and resolution > 1080:
+        # Try to find the exact video format for the selected resolution
+        video_fmt = next(
+            (f for f in formats if f.get("height") == resolution and f.get("vcodec") != "none"),
+            None
+        )
+        if video_fmt:
+            # Use original format (webm or VP9/AV1) + best audio
+            fmt_str = f"{video_fmt['format_id']}+bestaudio/best"
+        else:
+            print("❌ Requested resolution not available. Downloading best video instead.")
+            fmt_str = "bestvideo+bestaudio/best"
+    else:
+        # For <=1080p, download best mp4 directly if available
+        fmt_str = f"bestvideo[height={resolution}]+bestaudio/best" if resolution else "bestvideo+bestaudio/best"
 
     def sanitize(info, _):
         info["title"] = sanitize_title(info["title"])
@@ -88,14 +107,14 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
         return info
 
     ydl_opts = {
-        "format": fmt,
+        "format": fmt_str,
         "outtmpl": os.path.join(
             output_path,
             "%(channel)s",
             "%(upload_date>%Y-%m-%d)s - %(height)sp - %(title)s - %(id)s.%(ext)s"
         ),
-        "merge_output_format": "mp4",   # merge audio+video
-        "recode-video": "mp4",          # force H.264 + AAC
+        "merge_output_format": "mp4",  # Merge audio+video
+        "recode-video": "mp4",         # Force H.264 + AAC
         "sanitize_info": sanitize,
         "extractor_args": {
             "youtube": {"player_client": "web"}
@@ -110,7 +129,7 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
 # Main loop
 # ---------------------------
 def main():
-    print("=== YouTube Downloader (VLC-compatible H.264/AAC) ===")
+    print("=== YouTube Downloader (High-res webm -> MP4 H.264/AAC) ===")
     print(f"Base download path: {BASE_PATH}")
     url = input("Enter YouTube URL, video ID, or channel URL (or 'q' to quit): ").strip()
     if url.lower() == "q":
