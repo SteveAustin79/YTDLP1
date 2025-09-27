@@ -99,7 +99,7 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
             return
 
         # Temporary file paths (no extension; yt-dlp will add .webm/.opus)
-        video_path_base = os.path.join(output_path, "temp_video")
+        video_path_base = os.path.join(output_path, "temp_video.webm")
         audio_path_base = os.path.join(output_path, "temp_audio")
         final_file = os.path.join(
             output_path,
