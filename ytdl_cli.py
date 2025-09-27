@@ -45,9 +45,9 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
     os.makedirs(output_path, exist_ok=True)
 
     if resolution:
-        fmt = f"bestvideo[ext=mp4][height={resolution}]+bestaudio[ext=m4a]/best[ext=mp4]"
+        fmt = f"bestvideo[ext=mp4][vcodec^=avc1][height={resolution}]+bestaudio[ext=m4a]/best[ext=mp4][vcodec^=avc1]"
     else:
-        fmt = "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]"
+        fmt = "bestvideo[ext=mp4][vcodec^=avc1]+bestaudio[ext=m4a]/best[ext=mp4][vcodec^=avc1]"
 
     ydl_opts = {
         "format": fmt,
