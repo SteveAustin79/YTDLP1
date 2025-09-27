@@ -1,10 +1,27 @@
 import yt_dlp
 import os
 import re
+import json
 
 
-BASE_PATH = os.path.expanduser("F:/FullHD/Serien FullHD/YTDLchannel")  # change this if needed
+# ---------------------------
+# Load configuration
+# ---------------------------
+CONFIG_FILE = "config.json"
 
+if os.path.exists(CONFIG_FILE):
+    with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+        config = json.load(f)
+else:
+    # fallback default if no config.json
+    config = {"base_path": os.path.expanduser("~/YouTubeDownloads")}
+
+BASE_PATH = os.path.expanduser(config.get("base_path", "~/YouTubeDownloads"))
+
+
+# ---------------------------
+# Helpers
+# ---------------------------
 def sanitize_title(title: str) -> str:
     """Remove special characters that are problematic for filenames."""
     return re.sub(r'[<>:"/\\|?*\']', '', title)
@@ -28,6 +45,9 @@ def list_resolutions(info):
     return resolutions
 
 
+# ---------------------------
+# Download functions
+# ---------------------------
 def download_audio(url, output_path=BASE_PATH):
     def sanitize(info, _):
         info["title"] = sanitize_title(info["title"])
@@ -81,8 +101,12 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
         ydl.download([url])
 
 
+# ---------------------------
+# Main loop
+# ---------------------------
 def main():
     print("=== Simple YouTube Downloader (yt-dlp) ===")
+    print(f"Base download path: {BASE_PATH}")
     url = input("Enter YouTube URL, video ID, or channel URL (or 'q' to quit): ").strip()
     if url.lower() == "q":
         return False  # exit loop
@@ -123,4 +147,3 @@ if __name__ == "__main__":
         if not main():
             print("👋 Exiting YouTube Downloader. Goodbye!")
             break
-
