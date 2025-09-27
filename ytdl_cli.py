@@ -21,6 +21,11 @@ BASE_PATH = os.path.expanduser(config.get("base_path", "~/YouTubeDownloads"))
 # ---------------------------
 # Helpers
 # ---------------------------
+def clean_string_regex(text: str) -> str:
+    new_text = text.replace(":", "")
+    pattern = r"[^a-zA-Z0-9 ]"
+    return re.sub(pattern, "", new_text)
+
 def sanitize_title(title: str) -> str:
     """Remove special characters that are problematic for filenames."""
     return re.sub(r'[<>:"/\\|?*\']', '', title)
@@ -50,8 +55,9 @@ def list_resolutions(info):
 # ---------------------------
 def download_audio(url, output_path=BASE_PATH):
     def sanitize(info, _):
-        info["title"] = sanitize_title(info["title"])
-        info["channel"] = sanitize_title(info.get("channel") or info.get("uploader") or "UnknownChannel")
+        #info["title"] = sanitize_title(info["title"])
+        info["title"] = clean_string_regex(info["title"])
+        info["channel"] = clean_string_regex(info.get("channel") or info.get("uploader") or "UnknownChannel")
         return info
 
     ydl_opts = {
@@ -78,8 +84,8 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
     os.makedirs(output_path, exist_ok=True)
 
     def sanitize(info, _):
-        info["title"] = sanitize_title(info["title"])
-        info["channel"] = sanitize_title(info.get("channel") or info.get("uploader") or "UnknownChannel")
+        info["title"] = clean_string_regex(info["title"])
+        info["channel"] = clean_string_regex(info.get("channel") or info.get("uploader") or "UnknownChannel")
         return info
 
     if resolution and resolution > 1080:
