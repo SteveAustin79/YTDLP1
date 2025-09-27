@@ -65,7 +65,7 @@ def download_audio(url, output_path=BASE_PATH):
         "outtmpl": os.path.join(
             output_path,
             "%(channel)s",
-            "%(upload_date>%Y-%m-%d)s - AUDIO - %(title)s - %(id)s.%(ext)s"
+            "%(upload_date>%Y-%m-%d)s - %(title)s - %(id)s.%(ext)s"
         ),
         "postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3", "preferredquality": "192"}],
         "sanitize_info": sanitize,
