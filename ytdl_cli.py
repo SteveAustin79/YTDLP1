@@ -1,6 +1,10 @@
 import yt_dlp
 import os
 
+
+BASE_PATH = os.path.expanduser("F:/FullHD/Serien FullHD/YTDLchannel")  # change this if needed
+
+
 def get_info(url):
     """Fetch info about a video or playlist/channel."""
     ydl_opts = {"quiet": True, "skip_download": True}
@@ -19,10 +23,14 @@ def list_resolutions(info):
     return resolutions
 
 
-def download_audio(url, output_path="."):
+def download_audio(url, output_path=BASE_PATH):
+    os.makedirs(output_path, exist_ok=True)
     ydl_opts = {
         "format": "bestaudio[ext=m4a]/bestaudio",
-        "outtmpl": os.path.join(output_path, "%(title)s.%(ext)s"),
+        "outtmpl": os.path.join(
+            output_path,
+            "%(upload_date>%Y-%m-%d)s - AUDIO - %(title)s - %(id)s.%(ext)s"
+        ),
         "postprocessors": [{
             "key": "FFmpegExtractAudio",
             "preferredcodec": "mp3",
@@ -33,16 +41,25 @@ def download_audio(url, output_path="."):
         ydl.download([url])
 
 
-def download_video(url, resolution=None, output_path="."):
+def download_video(url, resolution=None, output_path=BASE_PATH):
+    os.makedirs(output_path, exist_ok=True)
+
     if resolution:
         fmt = f"bestvideo[ext=mp4][height={resolution}]+bestaudio[ext=m4a]/best[ext=mp4]"
     else:
-        fmt = "bestvideo+bestaudio/best"
+        fmt = "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]"
 
     ydl_opts = {
         "format": fmt,
-        "merge_output_format": "mp4",
-        "outtmpl": os.path.join(output_path, "%(title)s.%(ext)s"),
+        "merge_output_format": "mp4",   # ensures final file is playable in VLC
+        "outtmpl": os.path.join(
+            output_path,
+            "%(upload_date>%Y-%m-%d)s - %(height)sp - %(title)s - %(id)s.%(ext)s"
+        ),
+        "postprocessors": [{
+            "key": "FFmpegVideoConvertor",
+            "preferedformat": "mp4"     # extra safety net
+        }]
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([url])
@@ -65,7 +82,7 @@ def main():
         if not resolutions:
             print("No resolutions available.")
             return
-        
+
         print("Available resolutions:")
         for i, r in enumerate(resolutions, 1):
             print(f"{i}. {r}p")
