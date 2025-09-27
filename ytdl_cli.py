@@ -1,8 +1,14 @@
 import yt_dlp
 import os
+import re
 
 
 BASE_PATH = os.path.expanduser("F:/FullHD/Serien FullHD/YTDLchannel")  # change this if needed
+
+def sanitize_title(title: str) -> str:
+    """Remove special characters that are problematic for filenames."""
+    # Replace forbidden/special chars with underscore
+    return re.sub(r'[<>:"/\\|?*\']', '', title)
 
 
 def get_info(url):
@@ -25,6 +31,11 @@ def list_resolutions(info):
 
 def download_audio(url, output_path=BASE_PATH):
     os.makedirs(output_path, exist_ok=True)
+
+    def sanitize(info, _):
+        info["title"] = sanitize_title(info["title"])
+        return info
+
     ydl_opts = {
         "format": "bestaudio[ext=m4a]/bestaudio",
         "outtmpl": os.path.join(
@@ -35,7 +46,8 @@ def download_audio(url, output_path=BASE_PATH):
             "key": "FFmpegExtractAudio",
             "preferredcodec": "mp3",
             "preferredquality": "192"
-        }]
+        }],
+        "sanitize_info": sanitize
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([url])
@@ -49,17 +61,22 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
     else:
         fmt = "bestvideo[ext=mp4][vcodec^=avc1]+bestaudio[ext=m4a]/best[ext=mp4][vcodec^=avc1]"
 
+    def sanitize(info, _):
+        info["title"] = sanitize_title(info["title"])
+        return info
+
     ydl_opts = {
         "format": fmt,
-        "merge_output_format": "mp4",   # ensures final file is playable in VLC
+        "merge_output_format": "mp4",
         "outtmpl": os.path.join(
             output_path,
             "%(upload_date>%Y-%m-%d)s - %(height)sp - %(title)s - %(id)s.%(ext)s"
         ),
         "postprocessors": [{
             "key": "FFmpegVideoConvertor",
-            "preferedformat": "mp4"     # extra safety net
-        }]
+            "preferedformat": "mp4"
+        }],
+        "sanitize_info": sanitize
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([url])
