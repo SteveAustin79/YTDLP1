@@ -136,7 +136,7 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
         # Merge and re-encode into MP4 H.264 + AAC
         subprocess.run([
             "ffmpeg", "-y",
-            "-i", video_path_base + ".webm",
+            "-i", video_path_base,
             "-i", audio_file,
             "-c:v", "libx264",
             "-preset", "fast",
@@ -148,7 +148,7 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
 
         # Remove temp files
         try:
-            os.remove(video_path_base + ".webm")
+            os.remove(video_path_base)
             os.remove(audio_file)
         except FileNotFoundError:
             pass
