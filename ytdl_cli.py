@@ -84,7 +84,10 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
 
 def main():
     print("=== Simple YouTube Downloader (yt-dlp) ===")
-    url = input("Enter YouTube URL, video ID, or channel URL: ").strip()
+    url = input("Enter YouTube URL, video ID, or channel URL (or 'q' to quit): ").strip()
+    if url.lower() == "q":
+        return False  # exit loop
+
     if not url.startswith("http"):
         url = f"https://www.youtube.com/watch?v={url}"
 
@@ -98,7 +101,7 @@ def main():
         resolutions = list_resolutions(info)
         if not resolutions:
             print("No resolutions available.")
-            return
+            return True
 
         print("Available resolutions:")
         for i, r in enumerate(resolutions, 1):
@@ -112,6 +115,13 @@ def main():
         download_video(url, resolution=res)
         print("✅ Video downloaded successfully.")
 
+    print()
+    return True
+
 
 if __name__ == "__main__":
-    main()
+    while True:
+        if not main():
+            print("👋 Exiting YouTube Downloader. Goodbye!")
+            break
+
