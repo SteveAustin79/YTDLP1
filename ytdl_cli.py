@@ -65,7 +65,7 @@ def download_audio(url, output_path=BASE_PATH):
         "outtmpl": os.path.join(
             output_path,
             "%(channel)s",
-            "%(upload_date>%Y-%m-%d)s - %(title)s - %(id)s.%(ext)s"
+            "%(upload_date>%Y-%m-%d)s-%(title)s-%(id)s.%(ext)s"
         ),
         "postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3", "preferredquality": "192"}],
         "sanitize_info": sanitize,
@@ -116,7 +116,7 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
         final_file = os.path.join(
             output_path,
             sanitize_title(info['channel']),
-            f"{upload_date} - {resolution}p - {sanitize_title(info['title'])} - {info['id']}.mp4"
+            f"{upload_date}-{resolution}p-{sanitize_title(info['title'])}-{info['id']}.mp4"
         )
         os.makedirs(os.path.dirname(final_file), exist_ok=True)
 
