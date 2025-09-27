@@ -11,15 +11,15 @@ cd YTDLP1.gui
 ```
 3. Install python environment
 ```diff
-python3 -m venv venv
-venv/scripts/activate
+python -m venv venv
+.\venv\scripts\activate
 ```
 4. Install dependencies
 ```diff
 sudo apt-get install python3-tk (Windows: pip install tk)
 ```
 ```diff
-sudo venv/bin/python3 -m pip install yt-dlp ffmpeg-python
+ .\venv\Scripts\python.exe -m pip install yt-dlp ffmpeg-python
 ```
 5. Create and modify config.json
 ```diff
