@@ -74,8 +74,7 @@ def download_audio(url, output_path=BASE_PATH):
 
 def download_video(url, resolution=None, output_path=BASE_PATH):
     """
-    Downloads video and always re-encodes to MPEG-4 AVC (H.264) MP4
-    for maximum VLC compatibility.
+    Download video and re-encode to H.264 MP4 (VLC-compatible)
     """
     if resolution:
         fmt = f"bestvideo[height={resolution}]+bestaudio/best"
@@ -98,13 +97,14 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
         "postprocessors": [{
             "key": "FFmpegVideoConvertor",
             "preferedformat": "mp4",
-            "preferedcodec": "h264"  # <--- force H.264 re-encode
+            "postprocessor_args": ["-c:v", "libx264", "-crf", "23", "-preset", "fast"]  # <-- force H.264
         }],
         "sanitize_info": sanitize
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([url])
+
 
 
 
