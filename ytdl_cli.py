@@ -7,7 +7,6 @@ BASE_PATH = os.path.expanduser("F:/FullHD/Serien FullHD/YTDLchannel")  # change 
 
 def sanitize_title(title: str) -> str:
     """Remove special characters that are problematic for filenames."""
-    # Replace forbidden/special chars with underscore
     return re.sub(r'[<>:"/\\|?*\']', '', title)
 
 
@@ -30,16 +29,16 @@ def list_resolutions(info):
 
 
 def download_audio(url, output_path=BASE_PATH):
-    os.makedirs(output_path, exist_ok=True)
-
     def sanitize(info, _):
         info["title"] = sanitize_title(info["title"])
+        info["channel"] = sanitize_title(info.get("channel") or info.get("uploader") or "UnknownChannel")
         return info
 
     ydl_opts = {
         "format": "bestaudio[ext=m4a]/bestaudio",
         "outtmpl": os.path.join(
             output_path,
+            "%(channel)s",
             "%(upload_date>%Y-%m-%d)s - AUDIO - %(title)s - %(id)s.%(ext)s"
         ),
         "postprocessors": [{
@@ -54,8 +53,6 @@ def download_audio(url, output_path=BASE_PATH):
 
 
 def download_video(url, resolution=None, output_path=BASE_PATH):
-    os.makedirs(output_path, exist_ok=True)
-
     if resolution:
         fmt = f"bestvideo[ext=mp4][vcodec^=avc1][height={resolution}]+bestaudio[ext=m4a]/best[ext=mp4][vcodec^=avc1]"
     else:
@@ -63,6 +60,7 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
 
     def sanitize(info, _):
         info["title"] = sanitize_title(info["title"])
+        info["channel"] = sanitize_title(info.get("channel") or info.get("uploader") or "UnknownChannel")
         return info
 
     ydl_opts = {
@@ -70,6 +68,7 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
         "merge_output_format": "mp4",
         "outtmpl": os.path.join(
             output_path,
+            "%(channel)s",
             "%(upload_date>%Y-%m-%d)s - %(height)sp - %(title)s - %(id)s.%(ext)s"
         ),
         "postprocessors": [{
@@ -81,7 +80,6 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([url])
 
-#comment
 
 def main():
     print("=== Simple YouTube Downloader (yt-dlp) ===")
