@@ -94,17 +94,8 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
             "%(channel)s",
             "%(upload_date>%Y-%m-%d)s - %(height)sp - %(title)s - %(id)s.%(ext)s"
         ),
-        "merge_output_format": "mp4",
-        "postprocessors": [{
-            "key": "FFmpegVideoConvertor",
-            "preferedformat": "mp4",
-            "postprocessor_args": [
-                "-c:v", "libx264",   # force H.264
-                "-preset", "fast",
-                "-crf", "23",
-                "-c:a", "aac"        # force AAC audio
-            ]
-        }],
+        "merge_output_format": "mp4",   # merge audio+video
+        "recode-video": "mp4",          # force H.264 + AAC
         "sanitize_info": sanitize,
         "extractor_args": {
             "youtube": {"player_client": "web"}
@@ -119,7 +110,7 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
 # Main loop
 # ---------------------------
 def main():
-    print("=== YouTube Downloader (2160p-ready, VLC-compatible H.264) ===")
+    print("=== YouTube Downloader (VLC-compatible H.264/AAC) ===")
     print(f"Base download path: {BASE_PATH}")
     url = input("Enter YouTube URL, video ID, or channel URL (or 'q' to quit): ").strip()
     if url.lower() == "q":
