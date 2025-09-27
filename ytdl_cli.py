@@ -93,12 +93,8 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
             "%(channel)s",
             "%(upload_date>%Y-%m-%d)s - %(height)sp - %(title)s - %(id)s.%(ext)s"
         ),
-        "merge_output_format": "mp4",
-        "postprocessors": [{
-            "key": "FFmpegVideoConvertor",
-            "preferedformat": "mp4",
-            "postprocessor_args": ["-c:v", "libx264", "-crf", "23", "-preset", "fast"]  # <-- force H.264
-        }],
+        "merge_output_format": "mp4",  # ensures merged into mp4
+        "recode-video": "mp4",          # ✅ this is the key to force H.264
         "sanitize_info": sanitize
     }
 
