@@ -2,6 +2,7 @@ import yt_dlp
 import os
 import re
 import json
+import subprocess
 
 # ---------------------------
 # Load configuration
@@ -29,7 +30,7 @@ def get_info(url):
         "quiet": True,
         "skip_download": True,
         "extractor_args": {
-            "youtube": {"player_client": "web"}  # force standard web client
+            "youtube": {"player_client": "web"}
         },
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -78,52 +79,98 @@ def download_audio(url, output_path=BASE_PATH):
 
 def download_video(url, resolution=None, output_path=BASE_PATH):
     """
-    Download video and automatically merge/re-encode high-res (>1080p) webm
-    into MP4 H.264 + AAC for VLC.
+    Downloads video, merges/re-encodes high-res webm+opus into MP4 H.264 + AAC
     """
     info = get_info(url)
     formats = info.get("formats", [])
 
-    # Determine if selected resolution is >1080p
-    if resolution and resolution > 1080:
-        # Try to find the exact video format for the selected resolution
-        video_fmt = next(
-            (f for f in formats if f.get("height") == resolution and f.get("vcodec") != "none"),
-            None
-        )
-        if video_fmt:
-            # Use original format (webm or VP9/AV1) + best audio
-            fmt_str = f"{video_fmt['format_id']}+bestaudio/best"
-        else:
-            print("❌ Requested resolution not available. Downloading best video instead.")
-            fmt_str = "bestvideo+bestaudio/best"
-    else:
-        # For <=1080p, download best mp4 directly if available
-        fmt_str = f"bestvideo[height={resolution}]+bestaudio/best" if resolution else "bestvideo+bestaudio/best"
+    os.makedirs(output_path, exist_ok=True)
 
     def sanitize(info, _):
         info["title"] = sanitize_title(info["title"])
         info["channel"] = sanitize_title(info.get("channel") or info.get("uploader") or "UnknownChannel")
         return info
 
-    ydl_opts = {
-        "format": fmt_str,
-        "outtmpl": os.path.join(
+    if resolution and resolution > 1080:
+        # High-res workflow
+        video_fmt = next((f for f in formats if f.get("height") == resolution and f.get("vcodec") != "none"), None)
+        if not video_fmt:
+            print("❌ Requested resolution not found, using best video")
+            fmt_vid = "bestvideo+bestaudio/best"
+            output_file = os.path.join(output_path, "%(title)s.%(ext)s")
+            with yt_dlp.YoutubeDL({
+                "format": fmt_vid,
+                "outtmpl": output_file,
+                "extractor_args": {"youtube": {"player_client": "web"}},
+                "sanitize_info": sanitize
+            }) as ydl:
+                ydl.download([url])
+            return
+
+        # Temporary files
+        video_path = os.path.join(output_path, "temp_video.webm")
+        audio_path = os.path.join(output_path, "temp_audio.opus")
+        final_file = os.path.join(
+            output_path,
+            sanitize_title(info['channel']),
+            f"{info.get('upload_date','unknown')}-{resolution}p-{sanitize_title(info['title'])}-{info['id']}.mp4"
+        )
+        os.makedirs(os.path.dirname(final_file), exist_ok=True)
+
+        # Download video only
+        with yt_dlp.YoutubeDL({
+            "format": f"{video_fmt['format_id']}",
+            "outtmpl": video_path,
+            "extractor_args": {"youtube": {"player_client": "web"}},
+            "sanitize_info": sanitize
+        }) as ydl:
+            ydl.download([url])
+
+        # Download audio only as opus
+        with yt_dlp.YoutubeDL({
+            "format": "bestaudio",
+            "outtmpl": audio_path,
+            "postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "opus"}],
+            "extractor_args": {"youtube": {"player_client": "web"}},
+            "sanitize_info": sanitize
+        }) as ydl:
+            ydl.download([url])
+
+        # Merge and re-encode
+        subprocess.run([
+            "ffmpeg", "-y",
+            "-i", video_path,
+            "-i", audio_path,
+            "-c:v", "libx264",
+            "-preset", "fast",
+            "-crf", "23",
+            "-c:a", "aac",
+            "-b:a", "192k",
+            final_file
+        ], check=True)
+
+        # Remove temp files
+        os.remove(video_path)
+        os.remove(audio_path)
+        print(f"✅ Video downloaded and merged to {final_file}")
+
+    else:
+        # <=1080p workflow
+        fmt_str = f"bestvideo[height={resolution}]+bestaudio/best" if resolution else "bestvideo+bestaudio/best"
+        output_file = os.path.join(
             output_path,
             "%(channel)s",
             "%(upload_date>%Y-%m-%d)s - %(height)sp - %(title)s - %(id)s.%(ext)s"
-        ),
-        "merge_output_format": "mp4",  # Merge audio+video
-        "recode-video": "mp4",         # Force H.264 + AAC
-        "sanitize_info": sanitize,
-        "extractor_args": {
-            "youtube": {"player_client": "web"}
-        },
-    }
+        )
 
-    os.makedirs(output_path, exist_ok=True)
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        ydl.download([url])
+        with yt_dlp.YoutubeDL({
+            "format": fmt_str,
+            "merge_output_format": "mp4",
+            "recode-video": "mp4",
+            "sanitize_info": sanitize,
+            "extractor_args": {"youtube": {"player_client": "web"}}
+        }) as ydl:
+            ydl.download([url])
 
 # ---------------------------
 # Main loop
