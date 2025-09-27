@@ -25,16 +25,22 @@ def sanitize_title(title: str) -> str:
 
 def get_info(url):
     """Fetch info about a video or playlist/channel."""
-    ydl_opts = {"quiet": True, "skip_download": True}
+    ydl_opts = {
+        "quiet": True,
+        "skip_download": True,
+        "extractor_args": {
+            "youtube": {"player_client": "web"}  # force standard web client
+        },
+    }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         return ydl.extract_info(url, download=False)
 
 def list_resolutions(info):
-    """Return sorted available MP4 video resolutions."""
+    """Return sorted available video resolutions (include mp4 and webm)."""
     formats = info.get("formats", [])
     video_streams = [
         f for f in formats
-        if f.get("vcodec") != "none" and f.get("ext") in ["mp4", "webm"] and f.get("height")
+        if f.get("vcodec") != "none" and f.get("height") and f.get("ext") in ["mp4", "webm"]
     ]
     resolutions = sorted({f["height"] for f in video_streams})
     return resolutions
@@ -60,7 +66,10 @@ def download_audio(url, output_path=BASE_PATH):
             "preferredcodec": "mp3",
             "preferredquality": "192"
         }],
-        "sanitize_info": sanitize
+        "sanitize_info": sanitize,
+        "extractor_args": {
+            "youtube": {"player_client": "web"}
+        },
     }
 
     os.makedirs(output_path, exist_ok=True)
@@ -69,12 +78,9 @@ def download_audio(url, output_path=BASE_PATH):
 
 def download_video(url, resolution=None, output_path=BASE_PATH):
     """
-    Download video and always re-encode to H.264/AAC MP4 for VLC.
+    Download video and re-encode to H.264/AAC MP4 (VLC-compatible)
     """
-    if resolution:
-        fmt = f"bestvideo[height={resolution}]+bestaudio/best"
-    else:
-        fmt = "bestvideo+bestaudio/best"
+    fmt = f"bestvideo[height={resolution}]+bestaudio/best" if resolution else "bestvideo+bestaudio/best"
 
     def sanitize(info, _):
         info["title"] = sanitize_title(info["title"])
@@ -93,13 +99,16 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
             "key": "FFmpegVideoConvertor",
             "preferedformat": "mp4",
             "postprocessor_args": [
-                "-c:v", "libx264",  # encode video to H.264
+                "-c:v", "libx264",   # force H.264
                 "-preset", "fast",
                 "-crf", "23",
-                "-c:a", "aac"       # encode audio to AAC
+                "-c:a", "aac"        # force AAC audio
             ]
         }],
-        "sanitize_info": sanitize
+        "sanitize_info": sanitize,
+        "extractor_args": {
+            "youtube": {"player_client": "web"}
+        },
     }
 
     os.makedirs(output_path, exist_ok=True)
@@ -110,7 +119,7 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
 # Main loop
 # ---------------------------
 def main():
-    print("=== YouTube Downloader (yt-dlp + VLC-compatible H.264) ===")
+    print("=== YouTube Downloader (2160p-ready, VLC-compatible H.264) ===")
     print(f"Base download path: {BASE_PATH}")
     url = input("Enter YouTube URL, video ID, or channel URL (or 'q' to quit): ").strip()
     if url.lower() == "q":
