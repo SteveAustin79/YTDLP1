@@ -107,10 +107,16 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
         # Temporary file paths (no extension; yt-dlp will add .webm/.opus)
         video_path_base = os.path.join(output_path, "temp_video.webm")
         audio_path_base = os.path.join(output_path, "temp_audio")
+
+        upload_date = info.get('upload_date', 'unknown')
+        if upload_date != 'unknown' and len(upload_date) == 8:
+            # Convert from YYYYMMDD → YYYY-MM-DD
+            upload_date = f"{upload_date[:4]}-{upload_date[4:6]}-{upload_date[6:]}"
+
         final_file = os.path.join(
             output_path,
             sanitize_title(info['channel']),
-            f"{info.get('upload_date','unknown')}-{resolution}p-{sanitize_title(info['title'])}-{info['id']}.mp4"
+            f"{upload_date} - {resolution}p - {sanitize_title(info['title'])} - {info['id']}.mp4"
         )
         os.makedirs(os.path.dirname(final_file), exist_ok=True)
 
