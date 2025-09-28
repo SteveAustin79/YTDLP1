@@ -18,17 +18,6 @@ else:
 BASE_PATH = os.path.expanduser(config.get("base_path", "~/YouTubeDownloads"))
 
 # ---------------------------
-# Cookies setup
-# ---------------------------
-USE_COOKIES = True
-COOKIES_FILE = os.path.abspath("cookies.txt") if USE_COOKIES else None
-
-if USE_COOKIES:
-    if not os.path.exists(COOKIES_FILE):
-        raise FileNotFoundError(f"❌ Cookies file not found: {COOKIES_FILE}")
-    print(f"🍪 Using cookies from: {COOKIES_FILE}")
-
-# ---------------------------
 # Helpers
 # ---------------------------
 def clean_string_regex(text: str) -> str:
@@ -40,10 +29,9 @@ def get_info(url):
     ydl_opts = {
         "quiet": True,
         "skip_download": True,
-        "extractor_args": {"youtube": {"player_client": "web"}}
+        "extractor_args": {"youtube": {"player_client": "web"}},
+        "cookies_from_browser": "firefox"   # use Firefox profile cookies
     }
-    if USE_COOKIES:
-        ydl_opts["cookies"] = COOKIES_FILE
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         return ydl.extract_info(url, download=False)
 
@@ -87,9 +75,8 @@ def download_audio(url, output_path=BASE_PATH):
         "postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3", "preferredquality": "192"}],
         "sanitize_info": sanitize,
         "extractor_args": {"youtube": {"player_client": "web"}},
+        "cookies_from_browser": "firefox"
     }
-    if USE_COOKIES:
-        ydl_opts["cookies"] = COOKIES_FILE
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([url])
@@ -129,38 +116,30 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
             resolution = None
 
     if resolution and resolution > 1080 and video_fmt:
-        # Temporary paths
         video_temp = os.path.join(output_path, "temp_video.webm")
         audio_temp = os.path.join(output_path, "temp_audio")
 
-        # Download video only
         ydl_opts_video = {
             "format": f"{video_fmt['format_id']}",
             "outtmpl": video_temp,
             "extractor_args": {"youtube": {"player_client": "web"}},
-            "sanitize_info": sanitize
+            "sanitize_info": sanitize,
+            "cookies_from_browser": "firefox"
         }
-        if USE_COOKIES:
-            ydl_opts_video["cookies"] = COOKIES_FILE
-
         with yt_dlp.YoutubeDL(ydl_opts_video) as ydl:
             ydl.download([url])
 
-        # Download audio only as opus
         ydl_opts_audio = {
             "format": "bestaudio",
             "outtmpl": audio_temp,
             "postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "opus"}],
             "extractor_args": {"youtube": {"player_client": "web"}},
-            "sanitize_info": sanitize
+            "sanitize_info": sanitize,
+            "cookies_from_browser": "firefox"
         }
-        if USE_COOKIES:
-            ydl_opts_audio["cookies"] = COOKIES_FILE
-
         with yt_dlp.YoutubeDL(ydl_opts_audio) as ydl:
             ydl.download([url])
 
-        # Merge video + audio into MP4 H.264 + AAC
         audio_files = glob.glob(audio_temp + ".*")
         if not audio_files:
             raise FileNotFoundError("Audio file not found after download")
@@ -178,24 +157,20 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
             final_file
         ], check=True)
 
-        # Cleanup
         os.remove(video_temp)
         os.remove(audio_file)
         print(f"✅ Video downloaded and merged to {final_file}")
         return
 
-    # <=1080p workflow
     fmt_str = f"bestvideo[height={resolution}]+bestaudio/best" if resolution else "bestvideo+bestaudio/best"
     ydl_opts = {
         "format": fmt_str,
         "merge_output_format": "mp4",
         "recode-video": "mp4",
         "sanitize_info": sanitize,
-        "extractor_args": {"youtube": {"player_client": "web"}}
+        "extractor_args": {"youtube": {"player_client": "web"}},
+        "cookies_from_browser": "firefox"
     }
-    if USE_COOKIES:
-        ydl_opts["cookies"] = COOKIES_FILE
-
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([url])
     print(f"✅ Video downloaded to {final_file}")
@@ -204,7 +179,7 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
 # Main loop
 # ---------------------------
 def main():
-    print("=== YouTube Downloader ===")
+    print("=== YouTube Downloader (Firefox cookies) ===")
     print(f"Base download path: {BASE_PATH}")
     url = input("Enter YouTube URL, video ID, or channel URL (or 'q' to quit): ").strip()
     if url.lower() == "q":
