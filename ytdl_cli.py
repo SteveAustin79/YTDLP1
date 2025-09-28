@@ -26,10 +26,6 @@ def clean_string_regex(text: str) -> str:
     pattern = r"[^a-zA-Z0-9 ]"
     return re.sub(pattern, "", new_text)
 
-def sanitize_title(title: str) -> str:
-    """Remove special characters that are problematic for filenames."""
-    return re.sub(r'[<>:"/\\|?*\']', '', title)
-
 def get_info(url):
     """Fetch info about a video or playlist/channel."""
     ydl_opts = {
