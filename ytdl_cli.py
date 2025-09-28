@@ -115,8 +115,8 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
 
         final_file = os.path.join(
             output_path,
-            sanitize_title(info['channel']),
-            f"{upload_date} - {resolution}p - {sanitize_title(info['title'])} - {info['id']}.mp4"
+            clean_string_regex(info['channel']),
+            f"{upload_date} - {resolution}p - {clean_string_regex(info['title'])} - {info['id']}.mp4"
         )
         os.makedirs(os.path.dirname(final_file), exist_ok=True)
 
