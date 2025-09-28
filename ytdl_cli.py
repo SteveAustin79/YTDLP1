@@ -71,7 +71,7 @@ def get_info(url):
         "extractor_args": {"youtube": {"player_client": "web"}},
     }
     if USE_COOKIES and COOKIES_FILE:
-        ydl_opts["cookies"] = COOKIES_FILE
+        ydl_opts["cookies"] = os.path.abspath(COOKIES_FILE)
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         return ydl.extract_info(url, download=False)
 
@@ -121,7 +121,7 @@ def download_audio(url, output_path=BASE_PATH):
         "extractor_args": {"youtube": {"player_client": "web"}},
     }
     if USE_COOKIES and COOKIES_FILE:
-        ydl_opts["cookies"] = COOKIES_FILE
+        ydl_opts["cookies"] = os.path.abspath(COOKIES_FILE)
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([url])
@@ -170,7 +170,7 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
                 "sanitize_info": sanitize
             }
             if USE_COOKIES and COOKIES_FILE:
-                ydl_opts["cookies"] = COOKIES_FILE
+                ydl_opts["cookies"] = os.path.abspath(COOKIES_FILE)
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([url])
             return
@@ -186,7 +186,7 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
             "sanitize_info": sanitize
         }
         if USE_COOKIES and COOKIES_FILE:
-            ydl_opts_video["cookies"] = COOKIES_FILE
+            ydl_opts_video["cookies"] = os.path.abspath(COOKIES_FILE)
         with yt_dlp.YoutubeDL(ydl_opts_video) as ydl:
             ydl.download([url])
 
@@ -199,7 +199,7 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
             "sanitize_info": sanitize
         }
         if USE_COOKIES and COOKIES_FILE:
-            ydl_opts_audio["cookies"] = COOKIES_FILE
+            ydl_opts_audio["cookies"] = os.path.abspath(COOKIES_FILE)
         with yt_dlp.YoutubeDL(ydl_opts_audio) as ydl:
             ydl.download([url])
 
