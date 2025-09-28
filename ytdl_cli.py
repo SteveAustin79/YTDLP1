@@ -68,6 +68,7 @@ def get_info(url):
     ydl_opts = {
         "quiet": True,
         "skip_download": True,
+        "cookies": COOKIES_FILE,
         "extractor_args": {"youtube": {"player_client": "web"}},
     }
     if USE_COOKIES and COOKIES_FILE:
@@ -118,6 +119,7 @@ def download_audio(url, output_path=BASE_PATH):
         "outtmpl": final_file,
         "postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3", "preferredquality": "192"}],
         "sanitize_info": sanitize,
+        "cookies": COOKIES_FILE,
         "extractor_args": {"youtube": {"player_client": "web"}},
     }
     if USE_COOKIES and COOKIES_FILE:
@@ -166,6 +168,7 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
             ydl_opts = {
                 "format": fmt_vid,
                 "outtmpl": final_file,
+                "cookies": COOKIES_FILE,
                 "extractor_args": {"youtube": {"player_client": "web"}},
                 "sanitize_info": sanitize
             }
@@ -182,6 +185,7 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
         ydl_opts_video = {
             "format": f"{video_fmt['format_id']}",
             "outtmpl": video_path_base,
+            "cookies": COOKIES_FILE,
             "extractor_args": {"youtube": {"player_client": "web"}},
             "sanitize_info": sanitize
         }
@@ -195,6 +199,7 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
             "format": "bestaudio",
             "outtmpl": audio_path_base,
             "postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "opus"}],
+            "cookies": COOKIES_FILE,
             "extractor_args": {"youtube": {"player_client": "web"}},
             "sanitize_info": sanitize
         }
@@ -239,6 +244,7 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
             "merge_output_format": "mp4",
             "recode-video": "mp4",
             "sanitize_info": sanitize,
+            "cookies": COOKIES_FILE,
             "extractor_args": {"youtube": {"player_client": "web"}}
         }
         if USE_COOKIES and COOKIES_FILE:
