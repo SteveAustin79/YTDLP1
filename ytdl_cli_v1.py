@@ -57,7 +57,7 @@ def download_audio(url, output_path=BASE_PATH):
         return info
 
     info = get_info(url)
-    print("\nChannel Name/Folder: " + BASE_PATH + "/" + clean_string_regex(info['channel']) + "\n")
+    print("\nChannel Folder: " + BASE_PATH + "/" + clean_string_regex(info['channel']) + "\n")
 
     ydl_opts = {
         "format": "bestaudio[ext=m4a]/bestaudio",
@@ -86,7 +86,7 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
         info["channel"] = clean_string_regex(info.get("channel") or info.get("uploader") or "UnknownChannel")
         return info
 
-    print("\nChannel Name/Folder: " + BASE_PATH + "/" + clean_string_regex(info['channel']) + "\n")
+    print("\nChannel Folder: " + BASE_PATH + "/" + clean_string_regex(info['channel']) + "\n")
 
     if resolution and resolution > 1080:
         # High-res workflow
