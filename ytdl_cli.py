@@ -21,7 +21,7 @@ BASE_PATH = os.path.expanduser(config.get("base_path", "~/YouTubeDownloads"))
 # Cookies setup
 # ---------------------------
 USE_COOKIES = True
-COOKIES_FILE = BASE_PATH + "cookies.txt" if USE_COOKIES else None
+COOKIES_FILE = BASE_PATH + "/cookies.txt" if USE_COOKIES else None
 
 if USE_COOKIES:
     if not os.path.exists(COOKIES_FILE):
