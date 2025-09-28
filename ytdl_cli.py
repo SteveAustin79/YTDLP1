@@ -109,6 +109,8 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
             # Convert from YYYYMMDD → YYYY-MM-DD
             upload_date = f"{upload_date[:4]}-{upload_date[4:6]}-{upload_date[6:]}"
 
+        print("Channel Name/Folder: " + clean_string_regex(info['channel']))
+
         final_file = os.path.join(
             output_path,
             clean_string_regex(info['channel']),
