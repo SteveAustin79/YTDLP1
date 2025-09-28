@@ -4,6 +4,7 @@ import re
 import json
 import subprocess
 import glob
+import shutil
 
 # ---------------------------
 # Load configuration
@@ -55,6 +56,7 @@ def ensure_cookies():
 
 COOKIES_FILE = ensure_cookies()
 
+
 # ---------------------------
 # Helpers
 # ---------------------------
@@ -89,44 +91,28 @@ def list_resolutions(info):
 # Download functions
 # ---------------------------
 def download_audio(url, output_path=BASE_PATH):
-    info = get_info(url)
-
-    upload_date = info.get('upload_date', 'unknown')
-    if upload_date != 'unknown' and len(upload_date) == 8:
-        upload_date = f"{upload_date[:4]}-{upload_date[4:6]}-{upload_date[6:]}"
-
-    channel_folder = clean_string_regex(info.get("channel") or info.get("uploader") or "UnknownChannel")
-    final_file = os.path.join(
-        output_path,
-        channel_folder,
-        f"{upload_date} - {clean_string_regex(info['title'])} - {info['id']}.mp3"
-    )
-    os.makedirs(os.path.dirname(final_file), exist_ok=True)
-
-    # ✅ Skip if file exists
-    if os.path.exists(final_file):
-        print(f"⚠️ Audio file already exists, skipping: {final_file}")
-        return
-
     def sanitize(info, _):
+        #info["title"] = sanitize_title(info["title"])
         info["title"] = clean_string_regex(info["title"])
         info["channel"] = clean_string_regex(info.get("channel") or info.get("uploader") or "UnknownChannel")
         return info
 
     ydl_opts = {
         "format": "bestaudio[ext=m4a]/bestaudio",
-        "outtmpl": final_file,
+        "outtmpl": os.path.join(
+            output_path,
+            "%(channel)s",
+            "%(upload_date>%Y-%m-%d)s-%(title)s-%(id)s.%(ext)s"
+        ),
         "postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3", "preferredquality": "192"}],
         "sanitize_info": sanitize,
         "extractor_args": {"youtube": {"player_client": "web"}},
     }
     if USE_COOKIES and COOKIES_FILE:
         ydl_opts["cookies"] = COOKIES_FILE
-
+    os.makedirs(output_path, exist_ok=True)
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([url])
-
-    print(f"✅ Audio downloaded to {final_file}")
 
 def download_video(url, resolution=None, output_path=BASE_PATH):
     """Download video, merge high-res webm+opus into MP4 H.264 + AAC"""
@@ -140,32 +126,31 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
         info["channel"] = clean_string_regex(info.get("channel") or info.get("uploader") or "UnknownChannel")
         return info
 
-    upload_date = info.get('upload_date', 'unknown')
-    if upload_date != 'unknown' and len(upload_date) == 8:
-        upload_date = f"{upload_date[:4]}-{upload_date[4:6]}-{upload_date[6:]}"
-
-    channel_folder = clean_string_regex(info['channel'])
-    final_file = os.path.join(
-        output_path,
-        channel_folder,
-        f"{upload_date} - {resolution if resolution else info.get('height','best')}p - {clean_string_regex(info['title'])} - {info['id']}.mp4"
-    )
-    os.makedirs(os.path.dirname(final_file), exist_ok=True)
-
-    # ✅ Skip if file exists
-    if os.path.exists(final_file):
-        print(f"⚠️ Video file already exists, skipping: {final_file}")
-        return
-
+    #if resolution and resolution > 1080:
+    #    # High-res workflow
+    #    video_fmt = next((f for f in formats if f.get("height") == resolution and f.get("vcodec") != "none"), None)
+    #    if not video_fmt:
+    #        print("❌ Requested resolution not found, using best video")
+    #        fmt_vid = "bestvideo+bestaudio/best"
+    #        output_file = os.path.join(output_path, "%(title)s.%(ext)s")
+    #        with yt_dlp.YoutubeDL({
+    #            "format": fmt_vid,
+    #            "outtmpl": output_file,
+    #            "extractor_args": {"youtube": {"player_client": "web"}},
+    #            "sanitize_info": sanitize
+    #        }) as ydl:
+    #            ydl.download([url])
+    #        return
     if resolution and resolution > 1080:
         # High-res workflow
         video_fmt = next((f for f in formats if f.get("height") == resolution and f.get("vcodec") != "none"), None)
         if not video_fmt:
             print("❌ Requested resolution not found, using best video")
             fmt_vid = "bestvideo+bestaudio/best"
+            output_file = os.path.join(output_path, "%(title)s.%(ext)s")
             ydl_opts = {
                 "format": fmt_vid,
-                "outtmpl": final_file,
+                "outtmpl": output_file,
                 "extractor_args": {"youtube": {"player_client": "web"}},
                 "sanitize_info": sanitize
             }
@@ -175,10 +160,32 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
                 ydl.download([url])
             return
 
+        # Temporary file paths (no extension; yt-dlp will add .webm/.opus)
         video_path_base = os.path.join(output_path, "temp_video.webm")
         audio_path_base = os.path.join(output_path, "temp_audio")
 
+        upload_date = info.get('upload_date', 'unknown')
+        if upload_date != 'unknown' and len(upload_date) == 8:
+            # Convert from YYYYMMDD → YYYY-MM-DD
+            upload_date = f"{upload_date[:4]}-{upload_date[4:6]}-{upload_date[6:]}"
+
+        print("Channel Name/Folder: " + clean_string_regex(info['channel']))
+
+        final_file = os.path.join(
+            output_path,
+            clean_string_regex(info['channel']),
+            f"{upload_date} - {resolution}p - {clean_string_regex(info['title'])} - {info['id']}.mp4"
+        )
+        os.makedirs(os.path.dirname(final_file), exist_ok=True)
+
         # Download video only
+        #with yt_dlp.YoutubeDL({
+        #    "format": f"{video_fmt['format_id']}",
+        #    "outtmpl": video_path_base,
+        #    "extractor_args": {"youtube": {"player_client": "web"}},
+        #    "sanitize_info": sanitize
+        #}) as ydl:
+        #    ydl.download([url])
         ydl_opts_video = {
             "format": f"{video_fmt['format_id']}",
             "outtmpl": video_path_base,
@@ -186,11 +193,19 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
             "sanitize_info": sanitize
         }
         if USE_COOKIES and COOKIES_FILE:
-            ydl_opts_video["cookies"] = COOKIES_FILE
+            ydl_opts["cookies"] = COOKIES_FILE
         with yt_dlp.YoutubeDL(ydl_opts_video) as ydl:
             ydl.download([url])
 
         # Download audio only as opus
+        #with yt_dlp.YoutubeDL({
+        #    "format": "bestaudio",
+        #    "outtmpl": audio_path_base,
+        #    "postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "opus"}],
+        #    "extractor_args": {"youtube": {"player_client": "web"}},
+        #    "sanitize_info": sanitize
+        #}) as ydl:
+        #    ydl.download([url])
         ydl_opts_audio = {
             "format": "bestaudio",
             "outtmpl": audio_path_base,
@@ -199,11 +214,11 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
             "sanitize_info": sanitize
         }
         if USE_COOKIES and COOKIES_FILE:
-            ydl_opts_audio["cookies"] = COOKIES_FILE
+            ydl_opts["cookies"] = COOKIES_FILE
         with yt_dlp.YoutubeDL(ydl_opts_audio) as ydl:
             ydl.download([url])
 
-        # Detect actual audio file generated
+        # Detect actual audio file generated by yt-dlp
         audio_files = glob.glob(audio_path_base + ".*")
         if not audio_files:
             raise FileNotFoundError("Audio file not found after download")
@@ -232,8 +247,22 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
         print(f"✅ Video downloaded and merged to {final_file}")
 
     else:
-        # ≤1080p workflow
+        # <=1080p workflow
         fmt_str = f"bestvideo[height={resolution}]+bestaudio/best" if resolution else "bestvideo+bestaudio/best"
+        output_file = os.path.join(
+            output_path,
+            "%(channel)s",
+            "%(upload_date>%Y-%m-%d)s - %(height)sp - %(title)s - %(id)s.%(ext)s"
+        )
+
+        #with yt_dlp.YoutubeDL({
+        #    "format": fmt_str,
+        #    "merge_output_format": "mp4",
+        #    "recode-video": "mp4",
+        #    "sanitize_info": sanitize,
+        #    "extractor_args": {"youtube": {"player_client": "web"}}
+        #}) as ydl:
+        #    ydl.download([url])
         ydl_opts = {
             "format": fmt_str,
             "merge_output_format": "mp4",
@@ -254,7 +283,7 @@ def main():
     print(f"Base download path: {BASE_PATH}")
     url = input("Enter YouTube URL, video ID, or channel URL (or 'q' to quit): ").strip()
     if url.lower() == "q":
-        return False
+        return False  # exit loop
 
     if not url.startswith("http"):
         url = f"https://www.youtube.com/watch?v={url}"
