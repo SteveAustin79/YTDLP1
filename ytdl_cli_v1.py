@@ -190,7 +190,7 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
 # ---------------------------
 def main():
     print("=== YouTube Downloader v1.0 (20250929) (High-res webm -> MP4 H.264/AAC) ===")
-    print(f"Base download path: {BASE_PATH}")
+    print(f"Base download path: {BASE_PATH}\n")
     url = input("Enter YouTube URL, video ID, or channel URL (or 'q' to quit): ").strip()
     if url.lower() == "q":
         return False  # exit loop
