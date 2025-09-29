@@ -168,22 +168,69 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
         print(f"✅ Video downloaded and merged to {final_file}")
 
     else:
-        # <=1080p workflow
-        fmt_str = f"bestvideo[height={resolution}]+bestaudio/best" if resolution else "bestvideo+bestaudio/best"
-        output_file = os.path.join(
+        ## <=1080p workflow
+        #fmt_str = f"bestvideo[height={resolution}]+bestaudio/best" if resolution else "bestvideo+bestaudio/best"
+        #output_file = os.path.join(
+        #    output_path,
+        #    "%(channel)s",
+        #    "%(upload_date>%Y-%m-%d)s - %(height)sp - %(title)s - %(id)s.%(ext)s"
+        #)
+        #
+        #with yt_dlp.YoutubeDL({
+        #    "format": fmt_str,
+        #    "merge_output_format": "mp4",
+        #    "recode-video": "mp4",
+        #    "sanitize_info": sanitize,
+        #    "extractor_args": {"youtube": {"player_client": "web"}}
+        #}) as ydl:
+        #    ydl.download([url])
+        # ---------------------------
+        # <=1080p workflow (replace the old block)
+        # ---------------------------
+        # prefer native H.264 MP4 (avc1) when available so no re-encode is needed
+        if resolution:
+            fmt_avc = f"bestvideo[ext=mp4][vcodec^=avc1][height={resolution}] + bestaudio[ext=m4a]/best[ext=mp4][vcodec^=avc1]"
+        else:
+            fmt_avc = "bestvideo[ext=mp4][vcodec^=avc1]+bestaudio[ext=m4a]/best[ext=mp4][vcodec^=avc1]"
+
+        # final path / template (puts file into BASE_PATH\Channel\...)
+        outtmpl = os.path.join(
             output_path,
             "%(channel)s",
             "%(upload_date>%Y-%m-%d)s - %(height)sp - %(title)s - %(id)s.%(ext)s"
         )
 
-        with yt_dlp.YoutubeDL({
-            "format": fmt_str,
-            "merge_output_format": "mp4",
-            "recode-video": "mp4",
+        ydl_opts = {
+            "format": fmt_avc,
+            "outtmpl": outtmpl,  # <-- ensure yt-dlp writes to your base_path\subfolder
+            "merge_output_format": "mp4",  # merges audio/video into mp4 container
             "sanitize_info": sanitize,
-            "extractor_args": {"youtube": {"player_client": "web"}}
-        }) as ydl:
-            ydl.download([url])
+            "extractor_args": {"youtube": {"player_client": "web"}},
+        }
+
+        # Try to download the avc1 MP4 stream first (fast and directly playable)
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([url])
+        except Exception as e:
+            # If avc1 not available or download fails, fallback to download+re-encode
+            print("⤵ Fallback: AVC1 stream unavailable or failed, downloading best and re-encoding to H.264. Reason:",
+                  e)
+
+            ydl_opts_fallback = {
+                "format": "bestvideo+bestaudio/best",  # get best video (may be webm VP9/AV1) + best audio
+                "outtmpl": outtmpl,
+                "merge_output_format": "mp4",
+                "recode-video": "mp4",  # request yt-dlp/ffmpeg to produce an mp4 (transcodes if needed)
+                "sanitize_info": sanitize,
+                "extractor_args": {"youtube": {"player_client": "web"}},
+            }
+
+            with yt_dlp.YoutubeDL(ydl_opts_fallback) as ydl:
+                ydl.download([url])
+
+        print(f"✅ Video downloaded to template: {outtmpl}")
+
 
 # ---------------------------
 # Main loop
