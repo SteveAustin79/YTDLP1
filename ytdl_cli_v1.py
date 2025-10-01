@@ -32,6 +32,7 @@ def get_info(url):
         "quiet": True,
         "skip_download": True,
         "extractor_args": {"youtube": {"player_client": "web"}},
+        "cookiesfrombrowser": ("firefox",),
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         return ydl.extract_info(url, download=False)
