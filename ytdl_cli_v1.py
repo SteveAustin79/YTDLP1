@@ -69,6 +69,7 @@ def download_audio(url, output_path=BASE_PATH):
         "postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3", "preferredquality": "192"}],
         "sanitize_info": sanitize,
         "extractor_args": {"youtube": {"player_client": "web"}},
+        "cookiesfrombrowser": ("firefox",),
     }
     os.makedirs(output_path, exist_ok=True)
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -99,7 +100,8 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
                 "format": fmt_vid,
                 "outtmpl": output_file,
                 "extractor_args": {"youtube": {"player_client": "web"}},
-                "sanitize_info": sanitize
+                "sanitize_info": sanitize,
+                "cookiesfrombrowser": ("firefox",),
             }) as ydl:
                 ydl.download([url])
             return
@@ -125,7 +127,8 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
             "format": f"{video_fmt['format_id']}",
             "outtmpl": video_path_base,
             "extractor_args": {"youtube": {"player_client": "web"}},
-            "sanitize_info": sanitize
+            "sanitize_info": sanitize,
+            "cookiesfrombrowser": ("firefox",),
         }) as ydl:
             ydl.download([url])
 
@@ -135,7 +138,8 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
             "outtmpl": audio_path_base,
             "postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "opus"}],
             "extractor_args": {"youtube": {"player_client": "web"}},
-            "sanitize_info": sanitize
+            "sanitize_info": sanitize,
+            "cookiesfrombrowser": ("firefox",),
         }) as ydl:
             ydl.download([url])
 
@@ -206,6 +210,7 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
             "merge_output_format": "mp4",  # merges audio/video into mp4 container
             "sanitize_info": sanitize,
             "extractor_args": {"youtube": {"player_client": "web"}},
+            "cookiesfrombrowser": ("firefox",),
         }
 
         # Try to download the avc1 MP4 stream first (fast and directly playable)
@@ -224,6 +229,7 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
                 "recode-video": "mp4",  # request yt-dlp/ffmpeg to produce an mp4 (transcodes if needed)
                 "sanitize_info": sanitize,
                 "extractor_args": {"youtube": {"player_client": "web"}},
+                "cookiesfrombrowser": ("firefox",),
             }
 
             with yt_dlp.YoutubeDL(ydl_opts_fallback) as ydl:
