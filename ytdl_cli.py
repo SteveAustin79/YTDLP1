@@ -81,6 +81,7 @@ def print_video_info(info, selected_res=None):
     if selected_res:
         print(f"Resolution: {selected_res}p")
     print("===========================\n")
+    print("\nChannel Folder: " + BASE_PATH + "/" + clean_string_regex(info['channel']) + "\n")
 
 # ------------------------------------------------------------------
 # Download functions
