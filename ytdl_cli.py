@@ -39,7 +39,7 @@ def get_info(url):
     ydl_opts = {
         "quiet": True,
         "skip_download": True,
-        "extractor_args": {"youtube": {"player_client": "mweb"}},
+        "extractor_args": {"youtube": {"player_client": "tv_embedded"}},
         "cookiesfrombrowser": ("firefox",),
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -104,7 +104,7 @@ def download_audio(url, output_path=BASE_PATH):
         ),
         "postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3", "preferredquality": "192"}],
         "sanitize_info": sanitize,
-        "extractor_args": {"youtube": {"player_client": "mweb"}},
+        "extractor_args": {"youtube": {"player_client": "tv_embedded"}},
         "cookiesfrombrowser": ("firefox",),
     }
     os.makedirs(output_path, exist_ok=True)
@@ -135,7 +135,7 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
             with yt_dlp.YoutubeDL({
                 "format": fmt_vid,
                 "outtmpl": output_file,
-                "extractor_args": {"youtube": {"player_client": "mweb"}},
+                "extractor_args": {"youtube": {"player_client": "tv_embedded"}},
                 "sanitize_info": sanitize,
                 "cookiesfrombrowser": ("firefox",),
             }) as ydl:
@@ -161,7 +161,7 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
         with yt_dlp.YoutubeDL({
             "format": f"{video_fmt['format_id']}",
             "outtmpl": video_path_base,
-            "extractor_args": {"youtube": {"player_client": "mweb"}},
+            "extractor_args": {"youtube": {"player_client": "tv_embedded"}},
             "sanitize_info": sanitize,
             "cookiesfrombrowser": ("firefox",),
         }) as ydl:
@@ -172,7 +172,7 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
             "format": "bestaudio",
             "outtmpl": audio_path_base,
             "postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "opus"}],
-            "extractor_args": {"youtube": {"player_client": "mweb"}},
+            "extractor_args": {"youtube": {"player_client": "tv_embedded"}},
             "sanitize_info": sanitize,
             "cookiesfrombrowser": ("firefox",),
         }) as ydl:
@@ -224,7 +224,7 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
             "outtmpl": outtmpl,
             "merge_output_format": "mp4",
             "sanitize_info": sanitize,
-            "extractor_args": {"youtube": {"player_client": "mweb"}},
+            "extractor_args": {"youtube": {"player_client": "tv_embedded"}},
             "cookiesfrombrowser": ("firefox",),
         }
 
@@ -242,7 +242,7 @@ def download_video(url, resolution=None, output_path=BASE_PATH):
                 "merge_output_format": "mp4",
                 "recode-video": "mp4",
                 "sanitize_info": sanitize,
-                "extractor_args": {"youtube": {"player_client": "mweb"}},
+                "extractor_args": {"youtube": {"player_client": "tv_embedded"}},
                 "cookiesfrombrowser": ("firefox",),
             }
 
